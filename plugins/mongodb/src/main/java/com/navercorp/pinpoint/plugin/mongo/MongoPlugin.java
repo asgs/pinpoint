@@ -143,12 +143,14 @@ public class MongoPlugin implements ProfilerPlugin, TransformTemplateAware {
             InstrumentMethod close = InstrumentUtils.findMethod(target, "close");
             close.addScopedInterceptor(ConnectionCloseInterceptor.class, MONGO_SCOPE);
 
-            try {
-                InstrumentMethod database = InstrumentUtils.findMethod(target, "getDB", "java.lang.String");
-                database.addScopedInterceptor(MongoDriverGetDatabaseInterceptor.class, MONGO_SCOPE,
-                        ExecutionPolicy.BOUNDARY);
-            } catch (NotFoundInstrumentException e) {
-                LOGGER.info("Couldn't find the 2.x's getDB(String) method from the class " + className);
+            if (connectVersion3 == null) {
+                try {
+                    InstrumentMethod database = InstrumentUtils.findMethod(target, "getDB", "java.lang.String");
+                    database.addScopedInterceptor(MongoDriverGetDatabaseInterceptor.class, MONGO_SCOPE,
+                            ExecutionPolicy.BOUNDARY);
+                } catch (NotFoundInstrumentException e) {
+                    LOGGER.info("Couldn't find the 2.x's getDB(String) method from the class " + className);
+                }
             }
 
             return target.toBytecode();
